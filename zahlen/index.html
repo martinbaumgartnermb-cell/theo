@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Zahlen">
+  <title>Théos Zahlen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../gemeinsam.css">
+  <style>
+    .karte.mengen  { background: #e76f51; }
+    .karte.fehlt   { background: #2a9d8f; }
+    .karte.rechnen { background: #f4a261; }
+    .karte.schreiben { background: #8e7dbe; }
+
+    .banner { font-size: 24px; font-weight: bold; background: white; border: 4px solid #ffd166; border-radius: 20px;
+              padding: 10px 14px; margin: 8px 0 12px; animation: reinhuepfen .6s ease-out; }
+
+    /* Mengen: in Fünferreihen wie in der Schule */
+    .menge { display: inline-flex; flex-direction: column; gap: 4px; background: white; border-radius: 24px; padding: 12px 16px;
+             box-shadow: 0 4px 14px rgba(0,0,0,.08); margin: 4px 0 16px; }
+    .menge .zeile { display: flex; gap: 4px; justify-content: flex-start; }
+    .menge .zeile.abstand { margin-top: 10px; }
+    .menge span { font-size: 46px; line-height: 1.15; width: 56px; }
+    .menge.klein span { font-size: 34px; width: 42px; }
+    .menge span.weg { opacity: .25; position: relative; }
+    .menge span.weg::after { content: "✖"; position: absolute; left: 0; right: 0; top: 0; font-size: 34px; color: #e63946; opacity: 1; }
+
+    /* Zahlenreihe */
+    .reihe { display: flex; gap: 10px; justify-content: center; margin: 14px 0 22px; }
+    .reihe div { width: 82px; height: 96px; background: white; border-radius: 20px; font-size: 60px; line-height: 96px;
+                 box-shadow: 0 4px 0 #ddd; color: #0a7bc2; }
+    .reihe div.luecke { background: #fff3c4; color: #e09f00; border: 4px dashed #ffb703; line-height: 88px; }
+
+    /* Rechnen */
+    .rechnung { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .rechnung .plus { font-size: 54px; font-weight: bold; color: #0a7bc2; }
+    .gleichung { font-size: 52px; color: #0a7bc2; margin: 0 0 16px; }
+    .antwort.schrift { font-size: 72px; }
+  </style>
+</head>
+<body>
+
+  <div class="kopf">
+    <h1>🔢 Zahlen</h1>
+    <button class="album-knopf" id="albumKnopf" aria-label="Sammelalbum">
+      <span class="album-zahl">📒 <span id="albumZahl">0</span></span>
+      <span class="album-punkte" id="albumPunkte"></span>
+    </button>
+  </div>
+
+  <!-- Startseite -->
+  <div class="seite" id="start">
+    <div class="begruessung">
+      <label class="foto">
+        <img id="foto" alt="Foto">
+        <span id="fotoHinweis">📷<br>Foto<br>wählen</span>
+        <input type="file" id="fotoWahl" accept="image/*" style="display:none">
+      </label>
+      <h2>Hallo <span id="name"></span>! <span class="winken">👋</span></h2>
+      <div class="serie" id="serie" hidden></div>
+    </div>
+    <div id="neuBanner" class="banner" hidden></div>
+    <p class="frage">Was möchtest du spielen?</p>
+    <div class="raster" id="karten"></div>
+    <button class="zuruecksetzen" id="zuruecksetzen">Fortschritt löschen</button>
+  </div>
+
+  <!-- Spielseite -->
+  <div class="spiel" id="spiel">
+    <div class="leiste">
+      <button class="knopf-klein" id="zurueck">⬅️ Zurück</button>
+      <button class="knopf-klein vorlesen" id="vorlesen" aria-label="Nochmal vorlesen">🔊</button>
+    </div>
+    <div id="inhalt"></div>
+    <div class="rueckmeldung" id="rueckmeldung"></div>
+    <div class="bis-sticker"></div>
+  </div>
+
+  <div id="stickerPlus"></div>
+  <dialog id="album"></dialog>
+
+  <script src="../gemeinsam.js"></script>
+  <script>
+    // ================= DIE SPIELE =================
+    // Jedes Spiel hat Stufen: Der Zahlenraum wird grösser, wenn Théo sicher ist.
+    const SPIELE = [
+      { id: "mengen",  name: "Wie viele?",   bild: "🍎", stufen: [5, 10, 20] },
+      { id: "fehlt",   name: "Welche Zahl fehlt?", bild: "🐾", stufen: [10, 20] },
+      { id: "rechnen", name: "Rechnen",      bild: "➕", stufen: [5, 10] },
+      { id: "schreiben", name: "Zahlen schreiben", bild: "✏️", stufen: [9] }
+    ];
+    const NAECHSTE_STUFE_AB = 12;   // nach 12 richtigen Antworten auf Anhieb geht es weiter
+    const DINGE = [
+      ["🍎", "Äpfel"], ["🐞", "Marienkäfer"], ["⭐", "Sterne"], ["🐟", "Fische"],
+      ["🎈", "Ballone"], ["🦆", "Enten"], ["🍓", "Erdbeeren"], ["🚗", "Autos"], ["🐥", "Küken"]
+    ];
+
+    // ================= SPEICHERN =================
+    const SPEICHER = "theo-zahlen";
+    let daten = laden();
+    function laden() {
+      let d = null;
+      try { const t = localStorage.getItem(SPEICHER); if (t) d = JSON.parse(t); } catch (f) {}
+      return Object.assign({ stufe: {}, punkte: {} }, d || {});
+    }
+    function speichern() { try { localStorage.setItem(SPEICHER, JSON.stringify(daten)); } catch (f) {} }
+    function spiel(id) { return SPIELE.find(function (s) { return s.id === id; }); }
+    function stufe(id) { return daten.stufe[id] || 1; }
+    function bis(id) { return spiel(id).stufen[stufe(id) - 1]; }
+
+    // ================= STARTSEITE =================
+    function zeigeStart() {
+      document.getElementById("start").style.display = "block";
+      document.getElementById("spiel").style.display = "none";
+      if (window.speechSynthesis) speechSynthesis.cancel();
+      const karten = document.getElementById("karten");
+      karten.innerHTML = "";
+      SPIELE.forEach(function (s) {
+        const k = document.createElement("button");
+        k.className = "karte " + s.id;
+        let sterne = "";
+        if (s.stufen.length > 1) for (let i = 1; i <= s.stufen.length; i++) sterne += i <= stufe(s.id) ? "⭐" : "☆";
+        const info = s.id === "schreiben" ? "0 bis 9" : "bis " + bis(s.id);
+        k.innerHTML = '<span class="bild">' + s.bild + '</span><span class="name">' + s.name + '</span>' +
+                      '<span class="stand">' + info + (sterne ? " " + sterne : "") + '</span>';
+        k.onclick = function () { starteSpiel(s.id); };
+        karten.appendChild(k);
+      });
+      albumAnzeigen();
+    }
+
+    // ================= SPIELEN =================
+    let modus = "", aufgabe = null, ersterVersuch = true, gesperrt = false, nachfahren = null, letzteZahl = -1;
+
+    function starteSpiel(m) {
+      modus = m;
+      document.getElementById("start").style.display = "none";
+      document.getElementById("spiel").style.display = "block";
+      neueAufgabe();
+    }
+
+    function zahl(von, bisZahl) { return von + Math.floor(Math.random() * (bisZahl - von + 1)); }
+    function optionenUm(richtig, max) {
+      const moeglich = [];
+      [-2, -1, 1, 2].forEach(function (d) { const z = richtig + d; if (z >= 0 && z <= max) moeglich.push(z); });
+      return mischen([richtig].concat(mischen(moeglich).slice(0, 2)));
+    }
+    function mengeHtml(anzahl, emoji, wegAb) {
+      // In Fünferreihen, nach zehn ein Abstand: so kann Théo schnell sehen statt zählen
+      const klein = anzahl > 10;
+      let html = '<div class="menge' + (klein ? " klein" : "") + '">';
+      for (let i = 0; i < anzahl; i += 5) {
+        html += '<div class="zeile' + (i > 0 && i % 10 === 0 ? " abstand" : "") + '">';
+        for (let j = i; j < Math.min(i + 5, anzahl); j++) html += '<span' + (wegAb !== undefined && j >= wegAb ? ' class="weg"' : "") + '>' + emoji + '</span>';
+        html += '</div>';
+      }
+      return html + '</div>';
+    }
+
+    function neueAufgabe() {
+      ersterVersuch = true; gesperrt = false;
+      document.getElementById("rueckmeldung").textContent = "";
+      const inhalt = document.getElementById("inhalt");
+      const max = bis(modus);
+      albumAnzeigen();
+
+      if (modus === "mengen") {
+        let n; do { n = zahl(1, max); } while (n === letzteZahl && max > 2);
+        letzteZahl = n;
+        const ding = zufall(DINGE);
+        aufgabe = { richtig: n, text: "Wie viele " + ding[1] + " sind das?" };
+        inhalt.innerHTML = mengeHtml(n, ding[0]) + '<div class="antworten" id="antworten"></div>';
+        optionenUm(n, max).forEach(function (o) { knopf(o); });
+
+      } else if (modus === "fehlt") {
+        const start = zahl(0, max - 3);
+        const luecke = zahl(1, 3);
+        const richtig = start + luecke;
+        aufgabe = { richtig: richtig, text: "Welche Zahl fehlt?" };
+        let reihe = '<div class="reihe schrift">';
+        for (let i = 0; i < 4; i++) reihe += i === luecke ? '<div class="luecke">?</div>' : '<div>' + (start + i) + '</div>';
+        inhalt.innerHTML = reihe + '</div><div class="antworten" id="antworten"></div>';
+        optionenUm(richtig, max).forEach(function (o) { knopf(o); });
+
+      } else if (modus === "rechnen") {
+        const ding = zufall(DINGE);
+        const plus = Math.random() < 0.6;
+        let a, b, richtig, bild, gleichung, text;
+        if (plus) {
+          a = zahl(1, max - 1); b = zahl(1, max - a); richtig = a + b;
+          bild = '<div class="rechnung">' + mengeHtml(a, ding[0]) + '<span class="plus">+</span>' + mengeHtml(b, ding[0]) + '</div>';
+          gleichung = a + " + " + b + " = ?";
+          text = a + " " + ding[1] + " und " + b + " " + ding[1] + ". Wie viele sind es zusammen?";
+        } else {
+          a = zahl(2, max); b = zahl(1, a - 1); richtig = a - b;
+          bild = '<div class="rechnung">' + mengeHtml(a, ding[0], a - b) + '</div>';
+          gleichung = a + " − " + b + " = ?";
+          text = "Es sind " + a + " " + ding[1] + ". " + b + " sind weg. Wie viele bleiben?";
+        }
+        aufgabe = { richtig: richtig, text: text };
+        inhalt.innerHTML = bild + '<div class="gleichung schrift">' + gleichung + '</div><div class="antworten" id="antworten"></div>';
+        optionenUm(richtig, max).forEach(function (o) { knopf(o); });
+
+      } else if (modus === "schreiben") {
+        let n; do { n = zahl(0, 9); } while (n === letzteZahl);
+        letzteZahl = n;
+        aufgabe = { richtig: n, text: "Fahr die Zahl " + n + " nach." };
+        const punkte = n > 0 ? mengeHtml(n, "🔵") : '<div class="aufgabe-text">Null ist gar nichts!</div>';
+        inhalt.innerHTML = '<div class="nachfahr-box"><canvas id="leinwand"></canvas></div>' +
+                           '<div class="nachfahr-knoepfe"><button class="knopf-klein" id="nochmal">🧽 Nochmal</button></div>' +
+                           '<div style="margin-top:12px">' + punkte + '</div>';
+        document.getElementById("nochmal").onclick = function () { if (nachfahren) nachfahren.leeren(); document.getElementById("rueckmeldung").textContent = ""; };
+        schriftBereit().then(function () {
+          nachfahren = Nachfahren(document.getElementById("leinwand"), String(n), function () { geschafft(); },
+            function (text) { document.getElementById("rueckmeldung").textContent = "🙂 Nochmal!"; sprich(text.replace("Buchstaben", "Zahl")); });
+        });
+      }
+      sprich(aufgabe.text);
+    }
+
+    function knopf(wert) {
+      const b = document.createElement("button");
+      b.className = "antwort schrift";
+      b.textContent = wert;
+      b.onclick = function () { antworten(b, wert); };
+      document.getElementById("antworten").appendChild(b);
+    }
+
+    function antworten(b, wert) {
+      if (gesperrt) return;
+      if (wert === aufgabe.richtig) {
+        b.classList.add("richtig");
+        geschafft();
+      } else {
+        b.classList.add("weg");
+        ersterVersuch = false;
+        sprich(zufall(NOCHMAL));
+      }
+    }
+
+    function geschafft() {
+      gesperrt = true;
+      tonRichtig();
+      const lob = zufall(LOB);
+      document.getElementById("rueckmeldung").textContent = "⭐ " + lob;
+      let sticker = false, aufgestiegen = false;
+      if (ersterVersuch || modus === "schreiben") {
+        sticker = albumRichtig();
+        daten.punkte[modus] = (daten.punkte[modus] || 0) + 1;
+        const s = spiel(modus);
+        if (daten.punkte[modus] >= NAECHSTE_STUFE_AB && stufe(modus) < s.stufen.length) {
+          daten.stufe[modus] = stufe(modus) + 1;
+          daten.punkte[modus] = 0;
+          aufgestiegen = true;
+        }
+        speichern();
+      }
+      const zusatz = { mengen: " Es sind " + aufgabe.richtig + ".", fehlt: " Es fehlt die " + aufgabe.richtig + ".",
+                       rechnen: " Das gibt " + aufgabe.richtig + ".", schreiben: "" }[modus];
+      if (!sticker) sprich(lob + zusatz);
+      if (aufgestiegen) {
+        const b = document.getElementById("neuBanner");
+        b.hidden = false;
+        b.textContent = "🎉 Neue Stufe bei «" + spiel(modus).name + "»: jetzt bis " + bis(modus) + "!";
+        setTimeout(function () { sprich("Super! Du bist eine Stufe weiter. Jetzt geht es bis " + bis(modus) + "."); }, sticker ? 3400 : 1800);
+      }
+      setTimeout(neueAufgabe, sticker ? 3400 : aufgestiegen ? 4200 : 2200);
+    }
+
+    document.getElementById("vorlesen").onclick = function () { if (aufgabe) sprich(aufgabe.text); };
+    document.getElementById("zurueck").onclick = zeigeStart;
+    document.getElementById("zuruecksetzen").onclick = function () {
+      if (confirm("Wirklich den Zahlen-Fortschritt löschen? (Die Sticker im Album bleiben.)")) {
+        daten = { stufe: {}, punkte: {} }; speichern(); zeigeStart();
+      }
+    };
+
+    fotoEinrichten();
+    albumEinrichten();
+    zeigeStart();
+  </script>
+</body>
+</html>

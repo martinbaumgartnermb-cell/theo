@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Buchstaben">
+  <title>Théos Buchstaben</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../gemeinsam.css">
+  <style>
+    .karte.paare  { background: #f4a261; }
+    .karte.anlaut { background: #2a9d8f; }
+    .karte.schreiben { background: #8e7dbe; }
+
+    /* Buchstaben-Tafel */
+    .tafel-titel { font-size: 22px; margin: 28px 0 10px; }
+    .tafel { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+    .kachel { border: none; border-radius: 14px; padding: 6px 0 8px; font-size: 26px; color: white; box-shadow: 0 3px 0 rgba(0,0,0,.15); }
+    .kachel.kann { background: #2a9d8f; }
+    .kachel.offen { background: #f4a261; }
+    .kachel.zu { background: #d4d4d4; color: #f4f4f4; }
+    .kachel small { display: block; font-size: 13px; }
+    .legende { font-size: 14px; color: #666; margin-top: 8px; }
+    .banner { font-size: 24px; font-weight: bold; background: white; border: 4px solid #ffd166; border-radius: 20px;
+              padding: 10px 14px; margin: 8px 0 12px; animation: reinhuepfen .6s ease-out; }
+
+    .gross-zeichen { font-size: 160px; line-height: 1.05; color: #0a7bc2; margin: 0 0 10px; }
+    .antwort.schrift { font-size: 72px; }
+    .hinweis-klein { font-size: 26px; color: #777; margin: 0 0 10px; }
+  </style>
+</head>
+<body>
+
+  <div class="kopf">
+    <h1>🔤 Buchstaben</h1>
+    <button class="album-knopf" id="albumKnopf" aria-label="Sammelalbum">
+      <span class="album-zahl">📒 <span id="albumZahl">0</span></span>
+      <span class="album-punkte" id="albumPunkte"></span>
+    </button>
+  </div>
+
+  <!-- Startseite -->
+  <div class="seite" id="start">
+    <div class="begruessung">
+      <label class="foto">
+        <img id="foto" alt="Foto">
+        <span id="fotoHinweis">📷<br>Foto<br>wählen</span>
+        <input type="file" id="fotoWahl" accept="image/*" style="display:none">
+      </label>
+      <h2>Hallo <span id="name"></span>! <span class="winken">👋</span></h2>
+      <div class="serie" id="serie" hidden></div>
+    </div>
+    <div id="neuBanner" class="banner" hidden></div>
+    <p class="frage">Was möchtest du spielen?</p>
+    <div class="raster">
+      <button class="karte paare" data-modus="paare"><span class="bild schrift">Aa</span><span class="name">Gross &amp; klein</span></button>
+      <button class="karte anlaut" data-modus="anlaut"><span class="bild">🐒</span><span class="name">Anfangs­buchstabe</span></button>
+      <button class="karte schreiben" data-modus="schreiben"><span class="bild">✏️</span><span class="name">Schreiben</span></button>
+    </div>
+
+    <p class="tafel-titel">Meine Buchstaben</p>
+    <div class="tafel schrift" id="tafel"></div>
+    <p class="legende">🟩 kann ich &nbsp; 🟧 lerne ich gerade &nbsp; ⬜ kommt noch</p>
+    <button class="zuruecksetzen" id="zuruecksetzen">Fortschritt löschen</button>
+  </div>
+
+  <!-- Spielseite -->
+  <div class="spiel" id="spiel">
+    <div class="leiste">
+      <button class="knopf-klein" id="zurueck">⬅️ Zurück</button>
+      <button class="knopf-klein vorlesen" id="vorlesen" aria-label="Nochmal vorlesen">🔊</button>
+    </div>
+    <div id="inhalt"></div>
+    <div class="rueckmeldung" id="rueckmeldung"></div>
+    <div class="bis-sticker"></div>
+  </div>
+
+  <div id="stickerPlus"></div>
+  <dialog id="album"></dialog>
+
+  <script src="../gemeinsam.js"></script>
+  <script>
+    // ================= DIE BUCHSTABEN =================
+    // Reihenfolge wie oft in der 1. Klasse: zuerst gut hörbare, gut unterscheidbare Buchstaben.
+    // Die nächste Gruppe öffnet sich, wenn Théo die meisten Buchstaben der aktuellen Gruppe kann.
+    const GRUPPEN = [
+      ["A", "M", "L", "O", "S", "I"],
+      ["E", "R", "N", "T", "U", "F"],
+      ["H", "D", "B", "K", "W", "G"],
+      ["P", "Z", "J", "V"],
+      ["C", "X", "Y", "Q"]
+    ];
+    // So spricht man die Buchstaben (für das Vorlesen)
+    const NAMEN = { A:"A", B:"Be", C:"Ze", D:"De", E:"E", F:"Eff", G:"Ge", H:"Ha", I:"I", J:"Jott", K:"Ka", L:"Ell", M:"Emm",
+                    N:"Enn", O:"O", P:"Pe", Q:"Ku", R:"Err", S:"Ess", T:"Te", U:"U", V:"Fau", W:"We", X:"Ix", Y:"Üpsilon", Z:"Zett" };
+    // Wörter für den Anfangsbuchstaben (nur Wörter, bei denen man den Anfang gut hört)
+    const WOERTER = {
+      A: [["🐒","Affe"],["🍍","Ananas"],["🍎","Apfel"]],
+      B: [["🍌","Banane"],["🐻","Bär"],["📖","Buch"],["🐝","Biene"]],
+      D: [["🦕","Dino"],["🐬","Delfin"]],
+      E: [["🐘","Elefant"],["🦆","Ente"],["🍓","Erdbeere"]],
+      F: [["🐟","Fisch"],["🦊","Fuchs"],["🐸","Frosch"]],
+      G: [["🦒","Giraffe"],["🎁","Geschenk"],["🎸","Gitarre"]],
+      H: [["🐰","Hase"],["🐶","Hund"],["🏠","Haus"],["❤️","Herz"]],
+      I: [["🦔","Igel"],["🏝️","Insel"]],
+      J: [["🧥","Jacke"],["🪀","Jo-Jo"]],
+      K: [["🐱","Katze"],["🧀","Käse"],["👑","Krone"],["🍰","Kuchen"]],
+      L: [["🦁","Löwe"],["🥄","Löffel"],["🦙","Lama"]],
+      M: [["🐭","Maus"],["🌙","Mond"],["🥛","Milch"],["🐚","Muschel"]],
+      N: [["👃","Nase"],["🍝","Nudeln"]],
+      O: [["👂","Ohr"],["🍊","Orange"]],
+      P: [["🐧","Pinguin"],["🍄","Pilz"],["🍕","Pizza"]],
+      R: [["🚀","Rakete"],["🌈","Regenbogen"],["🌹","Rose"]],
+      S: [["☀️","Sonne"],["🧦","Socke"],["🥗","Salat"]],
+      T: [["🍅","Tomate"],["🐯","Tiger"],["🚜","Traktor"],["🧸","Teddy"]],
+      U: [["🛸","Ufo"],["⌚","Uhr"]],
+      V: [["🌋","Vulkan"]],
+      W: [["🐳","Wal"],["🪱","Wurm"],["☁️","Wolke"]],
+      Z: [["🦓","Zebra"],["🍋","Zitrone"],["🚆","Zug"]]
+    };
+    const ALLE = [].concat.apply([], GRUPPEN);
+    const KANN_AB = 3;              // nach 3 richtigen Antworten "kann" Théo den Buchstaben
+
+    // ================= SPEICHERN =================
+    const SPEICHER = "theo-buchstaben";
+    let daten = laden();
+    function laden() {
+      let d = null;
+      try { const t = localStorage.getItem(SPEICHER); if (t) d = JSON.parse(t); } catch (f) {}
+      return Object.assign({ b: {}, offen: 1 }, d || {});
+    }
+    function speichern() { try { localStorage.setItem(SPEICHER, JSON.stringify(daten)); } catch (f) {} }
+    function info(l) { if (!daten.b[l]) daten.b[l] = { r: 0, f: 0 }; return daten.b[l]; }
+    function kann(l) { return (daten.b[l] || { r: 0 }).r >= KANN_AB; }
+    function offeneBuchstaben() { return [].concat.apply([], GRUPPEN.slice(0, daten.offen)); }
+
+    // Nächste Gruppe öffnen, wenn fast alle der letzten Gruppe gekonnt sind
+    function gruppeOeffnen() {
+      if (daten.offen >= GRUPPEN.length) return null;
+      const aktuell = GRUPPEN[daten.offen - 1];
+      const gekonnt = aktuell.filter(kann).length;
+      if (gekonnt >= Math.max(2, aktuell.length - 2)) {
+        daten.offen++;
+        speichern();
+        return GRUPPEN[daten.offen - 1];
+      }
+      return null;
+    }
+
+    // Buchstaben auswählen: die, die Théo noch nicht kann, kommen öfter
+    let letzterBuchstabe = "";
+    function waehleBuchstabe(nurMitWort) {
+      let liste = offeneBuchstaben();
+      if (nurMitWort) liste = liste.filter(function (l) { return WOERTER[l]; });
+      const kandidaten = liste.length > 1 ? liste.filter(function (l) { return l !== letzterBuchstabe; }) : liste;
+      const topf = [];
+      kandidaten.forEach(function (l) { const n = kann(l) ? 1 : 3; for (let i = 0; i < n; i++) topf.push(l); });
+      letzterBuchstabe = zufall(topf);
+      return letzterBuchstabe;
+    }
+    function ablenker(ziel, anzahl) {
+      let liste = offeneBuchstaben().filter(function (l) { return l !== ziel; });
+      if (liste.length < anzahl) liste = ALLE.filter(function (l) { return l !== ziel; });
+      return mischen(liste).slice(0, anzahl);
+    }
+
+    // ================= STARTSEITE =================
+    function zeigeStart() {
+      document.getElementById("start").style.display = "block";
+      document.getElementById("spiel").style.display = "none";
+      if (window.speechSynthesis) speechSynthesis.cancel();
+      const tafel = document.getElementById("tafel");
+      tafel.innerHTML = "";
+      const offen = offeneBuchstaben();
+      ALLE.forEach(function (l) {
+        const k = document.createElement("button");
+        const zustand = kann(l) ? "kann" : offen.indexOf(l) >= 0 ? "offen" : "zu";
+        k.className = "kachel " + zustand;
+        k.innerHTML = l + l.toLowerCase() + (zustand === "kann" ? "<small>⭐</small>" : "<small>&nbsp;</small>");
+        k.onclick = function () {
+          if (zustand === "zu") { sprich("Den lernst du bald!"); return; }
+          const w = WOERTER[l];
+          sprich(NAMEN[l] + (w ? " wie " + w[0][1] : ""));
+        };
+        tafel.appendChild(k);
+      });
+      albumAnzeigen();
+    }
+
+    document.querySelectorAll(".karte").forEach(function (k) {
+      k.onclick = function () { starteSpiel(k.dataset.modus); };
+    });
+
+    // ================= SPIELEN =================
+    let modus = "", aufgabe = null, ersterVersuch = true, gesperrt = false, nachfahren = null, schreibListe = [];
+
+    function starteSpiel(m) {
+      modus = m;
+      document.getElementById("start").style.display = "none";
+      document.getElementById("spiel").style.display = "block";
+      neueAufgabe();
+    }
+
+    function neueAufgabe() {
+      ersterVersuch = true; gesperrt = false;
+      document.getElementById("rueckmeldung").textContent = "";
+      const inhalt = document.getElementById("inhalt");
+      albumAnzeigen();
+
+      if (modus === "paare") {
+        const l = waehleBuchstabe(false);
+        // Am Anfang: grosser Buchstabe zeigen, kleinen suchen. Später auch umgekehrt.
+        const umgekehrt = kann(l) && Math.random() < 0.5;
+        const zeigen = umgekehrt ? l.toLowerCase() : l;
+        const suchen = umgekehrt ? l : l.toLowerCase();
+        const optionen = mischen([l].concat(ablenker(l, 2)));
+        aufgabe = { l: l, umgekehrt: umgekehrt,
+                    text: "Wo ist das " + (umgekehrt ? "grosse " : "kleine ") + NAMEN[l] + "?" };
+        inhalt.innerHTML = '<div class="gross-zeichen schrift">' + zeigen + '</div>' +
+                           '<div class="aufgabe-text">' + (umgekehrt ? "Wo ist das grosse?" : "Wo ist das kleine?") + '</div>' +
+                           '<div class="antworten" id="antworten"></div>';
+        optionen.forEach(function (o) {
+          knopf(umgekehrt ? o : o.toLowerCase(), o, "schrift");
+        });
+        sprich(aufgabe.text);
+
+      } else if (modus === "anlaut") {
+        const l = waehleBuchstabe(true);
+        const w = zufall(WOERTER[l]);
+        const optionen = mischen([l].concat(ablenker(l, 2)));
+        aufgabe = { l: l, wort: w[1], text: w[1] + ". Mit welchem Buchstaben fängt " + w[1] + " an?" };
+        inhalt.innerHTML = '<div class="aufgabe-bild" id="bild">' + w[0] + '</div>' +
+                           '<div class="aufgabe-text">Wie fängt das Wort an?</div>' +
+                           '<div class="antworten" id="antworten"></div>';
+        document.getElementById("bild").onclick = function () { sprich(aufgabe.text); };
+        optionen.forEach(function (o) { knopf(o + o.toLowerCase(), o, "schrift"); });
+        sprich(aufgabe.text);
+
+      } else if (modus === "schreiben") {
+        // Immer zuerst den grossen, dann den kleinen Buchstaben
+        if (!schreibListe.length) { const l = waehleBuchstabe(false); schreibListe = [l, l.toLowerCase()]; }
+        const z = schreibListe.shift();
+        const l = z.toUpperCase(), gross = z === l;
+        const w = WOERTER[l];
+        aufgabe = { l: l, text: "Fahr das " + (gross ? "grosse " : "kleine ") + NAMEN[l] + " nach." };
+        inhalt.innerHTML = '<div class="hinweis-klein"><span class="schrift">' + l + l.toLowerCase() + '</span>' + (w ? " · " + w[0][0] : "") + '</div>' +
+                           '<div class="nachfahr-box"><canvas id="leinwand"></canvas></div>' +
+                           '<div class="nachfahr-knoepfe"><button class="knopf-klein" id="nochmal">🧽 Nochmal</button></div>';
+        document.getElementById("nochmal").onclick = function () { if (nachfahren) nachfahren.leeren(); document.getElementById("rueckmeldung").textContent = ""; };
+        schriftBereit().then(function () {
+          nachfahren = Nachfahren(document.getElementById("leinwand"), z, function () { geschafft(); },
+            function (text) { document.getElementById("rueckmeldung").textContent = "🙂 Nochmal!"; sprich(text); });
+        });
+        sprich(aufgabe.text);
+      }
+    }
+
+    function knopf(beschriftung, wert, klasse) {
+      const b = document.createElement("button");
+      b.className = "antwort " + (klasse || "");
+      b.textContent = beschriftung;
+      b.onclick = function () { antworten(b, wert); };
+      document.getElementById("antworten").appendChild(b);
+    }
+
+    function antworten(b, wert) {
+      if (gesperrt) return;
+      if (wert === aufgabe.l) {
+        b.classList.add("richtig");
+        geschafft();
+      } else {
+        b.classList.add("weg");
+        if (ersterVersuch) { info(aufgabe.l).f++; speichern(); }
+        ersterVersuch = false;
+        if (modus === "paare") {
+          const anders = aufgabe.umgekehrt ? "grosse " : "kleine ";
+          sprich("Das ist das " + anders + NAMEN[wert] + ". " + aufgabe.text);
+        } else {
+          sprich(zufall(NOCHMAL) + " " + aufgabe.wort + ".");
+        }
+      }
+    }
+
+    function geschafft() {
+      gesperrt = true;
+      tonRichtig();
+      const lob = zufall(LOB);
+      document.getElementById("rueckmeldung").textContent = "⭐ " + lob;
+      let sticker = false;
+      // Beim Nachfahren zählt jedes Gelingen, sonst nur, wenn es auf Anhieb richtig war
+      if (ersterVersuch || modus === "schreiben") {
+        info(aufgabe.l).r++;
+        speichern();
+        sticker = albumRichtig();
+      }
+      const neu = gruppeOeffnen();
+      if (neu) zeigeNeueBuchstaben(neu);
+      if (!sticker) {
+        if (modus === "anlaut") sprich(lob + " " + aufgabe.wort + " fängt mit " + NAMEN[aufgabe.l] + " an.");
+        else sprich(lob);
+      }
+      setTimeout(neueAufgabe, sticker ? 3400 : modus === "anlaut" ? 2600 : 1700);
+    }
+
+    function zeigeNeueBuchstaben(gruppe) {
+      const b = document.getElementById("neuBanner");
+      b.hidden = false;
+      b.innerHTML = '🎉 Neue Buchstaben: <span class="schrift">' + gruppe.join(" ") + '</span>';
+      setTimeout(function () { sprich("Toll! Du hast neue Buchstaben freigeschaltet."); }, 3600);
+    }
+
+    document.getElementById("vorlesen").onclick = function () { if (aufgabe) sprich(aufgabe.text); };
+    document.getElementById("zurueck").onclick = function () { schreibListe = []; zeigeStart(); };
+    document.getElementById("zuruecksetzen").onclick = function () {
+      if (confirm("Wirklich den Buchstaben-Fortschritt löschen? (Die Sticker im Album bleiben.)")) {
+        daten = { b: {}, offen: 1 }; speichern(); zeigeStart();
+      }
+    };
+
+    fotoEinrichten();
+    albumEinrichten();
+    zeigeStart();
+  </script>
+</body>
+</html>

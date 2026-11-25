@@ -1,0 +1,123 @@
+/* ================= GEMEINSAMES AUSSEHEN für Théos Apps =================
+   Gleicher Stil wie Rémis Apps, aber grösser und mit weniger Text. */
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  background: linear-gradient(#e6f7ff, #fff3d6);
+  min-height: 100vh;
+  color: #333;
+  text-align: center;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+button { font-family: inherit; cursor: pointer; touch-action: manipulation; color: inherit; }
+
+/* Schulschrift für Buchstaben und Zahlen (einstöckiges a wie in der Schule) */
+.schrift { font-family: "Andika", "Trebuchet MS", Arial, sans-serif; }
+
+/* Kopfzeile */
+.kopf { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; max-width: 860px; margin: 0 auto; }
+h1 { margin: 0; font-size: 28px; color: #0a7bc2; }
+
+/* Begrüssung mit Foto */
+.begruessung { margin: 4px 0 10px; }
+.foto { display: inline-block; width: 120px; height: 120px; border-radius: 50%; border: 6px solid white;
+        box-shadow: 0 4px 12px rgba(0,0,0,.18); background: #8ecae6; overflow: hidden; cursor: pointer;
+        animation: reinhuepfen .8s ease-out; }
+.foto img { width: 100%; height: 100%; object-fit: cover; display: none; }
+.foto span { display: block; padding-top: 26px; font-size: 18px; color: #04466b; line-height: 1.3; }
+.begruessung h2 { font-size: 38px; margin: 10px 0 0; color: #0a7bc2; }
+.winken { display: inline-block; animation: winken 1.2s ease-in-out 2; transform-origin: 70% 70%; }
+@keyframes reinhuepfen { 0% { transform: scale(.3); opacity: 0; } 70% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes winken { 0%,100% { transform: rotate(0); } 25% { transform: rotate(20deg); } 75% { transform: rotate(-10deg); } }
+.serie { display: inline-block; font-size: 18px; font-weight: bold; color: #c44900; background: #fff1e0;
+         border-radius: 16px; padding: 4px 14px; margin-top: 8px; }
+
+/* Startseite: grosse Karten */
+.seite { padding: 0 16px 30px; max-width: 860px; margin: 0 auto; }
+.frage { font-size: 24px; margin: 6px 0 16px; }
+.raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+.karte { border: none; border-radius: 26px; padding: 18px 10px 16px; color: white; box-shadow: 0 6px 0 rgba(0,0,0,.18); }
+.karte:active { transform: translateY(5px); box-shadow: 0 1px 0 rgba(0,0,0,.18); }
+.karte .bild { font-size: 56px; display: block; line-height: 1.1; }
+.karte .name { font-size: 26px; font-weight: bold; display: block; margin: 6px 0 4px; }
+.karte .stand { font-size: 18px; display: block; letter-spacing: 2px; }
+
+/* Spielseite */
+.spiel { display: none; padding: 0 16px 30px; max-width: 640px; margin: 0 auto; }
+.leiste { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.knopf-klein { background: white; border: none; border-radius: 16px; font-size: 20px; padding: 10px 16px;
+               box-shadow: 0 3px 0 #d6d6d6; }
+.knopf-klein:active { transform: translateY(3px); box-shadow: none; }
+.vorlesen { font-size: 30px; padding: 6px 16px; }
+
+.aufgabe-bild { font-size: 110px; line-height: 1.15; margin: 4px 0; min-height: 126px; }
+.aufgabe-text { font-size: 24px; color: #555; min-height: 32px; margin: 4px 0 14px; }
+
+/* Antwort-Knöpfe: höchstens drei, gross */
+.antworten { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 560px; margin: 0 auto; }
+.antwort { font-size: 64px; padding: 14px 0 18px; border: none; border-radius: 26px; background: white;
+           box-shadow: 0 6px 0 #d9d9d9; line-height: 1.1; }
+.antwort:active { transform: translateY(5px); box-shadow: 0 1px 0 #d9d9d9; }
+.antwort.richtig { background: #06d6a0; color: white; box-shadow: 0 6px 0 #04a57b; animation: huepfen .5s; }
+.antwort.weg { opacity: .3; animation: wackeln .4s; pointer-events: none; }
+@keyframes huepfen { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+@keyframes wackeln { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+.rueckmeldung { font-size: 28px; font-weight: bold; color: #06a77d; min-height: 40px; margin: 14px 0 2px; }
+.bis-sticker { font-size: 17px; color: #777; margin: 6px 0; }
+.bis-sticker i { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #e6e6e6; margin: 0 3px; vertical-align: -2px; }
+.bis-sticker i.voll { background: #ffb703; }
+
+/* Nachfahren */
+.nachfahr-box { position: relative; width: min(78vw, 380px); height: min(78vw, 380px); margin: 0 auto;
+                background: white; border-radius: 28px; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+.nachfahr-box canvas { width: 100%; height: 100%; touch-action: none; display: block; border-radius: 28px; }
+.nachfahr-knoepfe { margin-top: 14px; display: flex; gap: 12px; justify-content: center; }
+
+.zuruecksetzen { margin-top: 30px; background: none; border: none; color: #999; font-size: 14px; text-decoration: underline; }
+
+/* ---------- Sammelalbum (gleich wie bei Rémi, aber Théos eigenes) ---------- */
+.album-knopf { display: flex; flex-direction: column; align-items: center; gap: 4px; background: white; border: none;
+               border-radius: 20px; padding: 6px 14px 8px; box-shadow: 0 2px 6px rgba(0,0,0,.12); color: #333; }
+.album-knopf:active { transform: translateY(2px); }
+.album-knopf.landet { animation: landen .5s ease-out; }
+@keyframes landen { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
+.album-zahl { font-size: 24px; font-weight: bold; line-height: 1; }
+.album-punkte { display: flex; gap: 4px; }
+.album-punkte i { width: 10px; height: 10px; border-radius: 50%; background: #eee; display: block; transition: background .3s; }
+.album-punkte i.voll { background: #ffb703; }
+
+#stickerPlus { position: fixed; top: 42%; left: 50%; z-index: 50; pointer-events: none; display: none; background: white;
+               border-radius: 28px; padding: 18px 30px 16px; min-width: 230px; box-shadow: 0 10px 30px rgba(0,0,0,.22); border: 5px solid #ffd166; }
+#stickerPlus.gold { border-color: #f5b700; background: linear-gradient(#fffbe6, #fff1b8); }
+#stickerPlus .s-titel { font-size: 24px; font-weight: bold; color: #0a7bc2; }
+#stickerPlus .s-bild { font-size: 120px; line-height: 1.15; }
+#stickerPlus.gold .s-bild { filter: drop-shadow(0 0 14px #ffd000); }
+#stickerPlus .s-name { font-size: 28px; font-weight: bold; }
+#stickerPlus .s-info { font-size: 16px; color: #777; margin-top: 2px; }
+#stickerPlus.zeigen { display: block; animation: stickerFlug 2.6s ease-in-out forwards; }
+@keyframes stickerFlug {
+  0%   { transform: translate(-50%,-50%) scale(.2) rotate(-12deg); opacity: 0; }
+  14%  { transform: translate(-50%,-50%) scale(1.12) rotate(4deg); opacity: 1; }
+  22%  { transform: translate(-50%,-50%) scale(1) rotate(0); }
+  74%  { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  100% { transform: translate(calc(-50% + 36vw), calc(-50% - 38vh)) scale(.12); opacity: .2; }
+}
+#album { border: none; border-radius: 22px; padding: 18px; width: 94%; max-width: 660px; max-height: 88vh; text-align: center; }
+#album::backdrop { background: rgba(0,0,0,.35); }
+#album h3 { margin: 0 0 4px; color: #0a7bc2; font-size: 28px; }
+#album .a-stand { font-size: 17px; color: #666; margin-bottom: 8px; }
+#album .a-seite { font-size: 19px; font-weight: bold; text-align: left; margin: 14px 0 6px; }
+#album .a-raster { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+#album .a-sticker { background: #f6f6f6; border-radius: 14px; padding: 6px 2px; font-size: 13px; color: #555; }
+#album .a-sticker b { display: block; font-size: 40px; line-height: 1.2; font-weight: normal; }
+#album .a-sticker.hat { background: #fff6d6; color: #333; }
+#album .a-sticker.gold { background: linear-gradient(#fff6c2, #ffe27a); box-shadow: 0 0 0 3px #f5b700 inset; }
+#album .a-sticker.fehlt b { filter: grayscale(1) brightness(1.6); opacity: .25; }
+#album .a-zu { margin-top: 16px; font-size: 24px; font-weight: bold; border: none; border-radius: 18px; padding: 12px 36px;
+               background: #06d6a0; color: white; box-shadow: 0 5px 0 #04a57b; }

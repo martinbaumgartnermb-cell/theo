@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Théo">
+  <title>Théos Lern-Apps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="gemeinsam.css">
+  <style>
+    .karte { text-decoration: none; display: block; padding: 26px 10px 22px; }
+    .karte .bild { font-size: 80px; }
+    .karte .name { font-size: 32px; }
+    .karte.buchstaben { background: #f4a261; }
+    .karte.zahlen { background: #2a9d8f; }
+  </style>
+</head>
+<body>
+  <div class="kopf">
+    <h1>🎒 Théos Lern-Apps</h1>
+    <button class="album-knopf" id="albumKnopf" aria-label="Sammelalbum">
+      <span class="album-zahl">📒 <span id="albumZahl">0</span></span>
+      <span class="album-punkte" id="albumPunkte"></span>
+    </button>
+  </div>
+  <div class="seite">
+    <div class="begruessung">
+      <label class="foto">
+        <img id="foto" alt="Foto">
+        <span id="fotoHinweis">📷<br>Foto<br>wählen</span>
+        <input type="file" id="fotoWahl" accept="image/*" style="display:none">
+      </label>
+      <h2>Hallo <span id="name"></span>! <span class="winken">👋</span></h2>
+      <div class="serie" id="serie" hidden></div>
+    </div>
+    <p class="frage">Was möchtest du heute lernen?</p>
+    <div class="raster">
+      <a class="karte buchstaben" href="buchstaben/"><span class="bild schrift">Aa</span><span class="name">Buchstaben</span></a>
+      <a class="karte zahlen" href="zahlen/"><span class="bild schrift">123</span><span class="name">Zahlen</span></a>
+    </div>
+  </div>
+  <div id="stickerPlus"></div>
+  <dialog id="album"></dialog>
+  <script src="gemeinsam.js"></script>
+  <script>
+    fotoEinrichten();
+    albumEinrichten();
+  </script>
+</body>
+</html>
