@@ -248,15 +248,16 @@
         const z = schreibListe.shift();
         const l = z.toUpperCase(), gross = z === l;
         const w = WOERTER[l];
-        aufgabe = { l: l, text: "Fahr das " + (gross ? "grosse " : "kleine ") + NAMEN[l] + " nach." };
+        aufgabe = { l: l, text: "Fahr das " + (gross ? "grosse " : "kleine ") + NAMEN[l] + " nach. Beginne beim grünen Punkt." };
         inhalt.innerHTML = '<div class="hinweis-klein"><span class="schrift">' + l + l.toLowerCase() + '</span>' + (w ? " · " + w[0][0] : "") + '</div>' +
-                           '<div class="nachfahr-box"><canvas id="leinwand"></canvas></div>' +
-                           '<div class="nachfahr-knoepfe"><button class="knopf-klein" id="nochmal">🧽 Nochmal</button></div>';
-        document.getElementById("nochmal").onclick = function () { if (nachfahren) nachfahren.leeren(); document.getElementById("rueckmeldung").textContent = ""; };
-        schriftBereit().then(function () {
-          nachfahren = Nachfahren(document.getElementById("leinwand"), z, function () { geschafft(); },
-            function (text) { document.getElementById("rueckmeldung").textContent = "🙂 Nochmal!"; sprich(text); });
-        });
+                           '<div class="nachfahr-box" id="nachfahrBox"></div>' +
+                           '<div class="nachfahr-knoepfe"><button class="knopf-klein" id="zeigen">👀 Zeigen</button>' +
+                           '<button class="knopf-klein" id="nochmal">🧽 Nochmal</button></div>';
+        nachfahren = Nachfahren(document.getElementById("nachfahrBox"), z, function () { geschafft(); },
+          function (text) { document.getElementById("rueckmeldung").textContent = "🙂 Nochmal!"; sprich(text); });
+        document.getElementById("nochmal").onclick = function () { nachfahren.leeren(); document.getElementById("rueckmeldung").textContent = ""; };
+        document.getElementById("zeigen").onclick = function () { nachfahren.zeigen(); };
+        setTimeout(function () { if (nachfahren) nachfahren.zeigen(); }, 400);   // einmal vormachen
         sprich(aufgabe.text);
       }
     }
@@ -278,12 +279,7 @@
         b.classList.add("weg");
         if (ersterVersuch) { info(aufgabe.l).f++; speichern(); }
         ersterVersuch = false;
-        if (modus === "paare") {
-          const anders = aufgabe.umgekehrt ? "grosse " : "kleine ";
-          sprich("Das ist das " + anders + NAMEN[wert] + ". " + aufgabe.text);
-        } else {
-          sprich(zufall(NOCHMAL) + " " + aufgabe.wort + ".");
-        }
+        sprich(zufall(NOCHMAL));
       }
     }
 
@@ -301,18 +297,15 @@
       }
       const neu = gruppeOeffnen();
       if (neu) zeigeNeueBuchstaben(neu);
-      if (!sticker) {
-        if (modus === "anlaut") sprich(lob + " " + aufgabe.wort + " fängt mit " + NAMEN[aufgabe.l] + " an.");
-        else sprich(lob);
-      }
-      setTimeout(neueAufgabe, sticker ? 3400 : modus === "anlaut" ? 2600 : 1700);
+      // Bei richtigen Antworten spricht die Stimme nicht: Ton und Stern reichen.
+      if (window.speechSynthesis) speechSynthesis.cancel();
+      setTimeout(neueAufgabe, sticker ? 3200 : 1500);
     }
 
     function zeigeNeueBuchstaben(gruppe) {
       const b = document.getElementById("neuBanner");
       b.hidden = false;
       b.innerHTML = '🎉 Neue Buchstaben: <span class="schrift">' + gruppe.join(" ") + '</span>';
-      setTimeout(function () { sprich("Toll! Du hast neue Buchstaben freigeschaltet."); }, 3600);
     }
 
     document.getElementById("vorlesen").onclick = function () { if (aufgabe) sprich(aufgabe.text); };

@@ -33,7 +33,7 @@
 
     /* Zahlenreihe */
     .reihe { display: flex; gap: 10px; justify-content: center; margin: 14px 0 22px; }
-    .reihe div { width: 82px; height: 96px; background: white; border-radius: 20px; font-size: 60px; line-height: 96px;
+    .reihe div { width: 82px; height: 96px; background: white; border-radius: 20px; font-size: 60px; line-height: 96px; display: flex; align-items: center; justify-content: center;
                  box-shadow: 0 4px 0 #ddd; color: #0a7bc2; }
     .reihe div.luecke { background: #fff3c4; color: #e09f00; border: 4px dashed #ffb703; line-height: 88px; }
 
@@ -185,7 +185,7 @@
         const richtig = start + luecke;
         aufgabe = { richtig: richtig, text: "Welche Zahl fehlt?" };
         let reihe = '<div class="reihe schrift">';
-        for (let i = 0; i < 4; i++) reihe += i === luecke ? '<div class="luecke">?</div>' : '<div>' + (start + i) + '</div>';
+        for (let i = 0; i < 4; i++) reihe += i === luecke ? '<div class="luecke">?</div>' : '<div>' + zahlSvg(start + i, 58) + '</div>';
         inhalt.innerHTML = reihe + '</div><div class="antworten" id="antworten"></div>';
         optionenUm(richtig, max).forEach(function (o) { knopf(o); });
 
@@ -196,12 +196,12 @@
         if (plus) {
           a = zahl(1, max - 1); b = zahl(1, max - a); richtig = a + b;
           bild = '<div class="rechnung">' + mengeHtml(a, ding[0]) + '<span class="plus">+</span>' + mengeHtml(b, ding[0]) + '</div>';
-          gleichung = a + " + " + b + " = ?";
+          gleichung = zahlSvg(a, 50) + " + " + zahlSvg(b, 50) + " = ?";
           text = a + " " + ding[1] + " und " + b + " " + ding[1] + ". Wie viele sind es zusammen?";
         } else {
           a = zahl(2, max); b = zahl(1, a - 1); richtig = a - b;
           bild = '<div class="rechnung">' + mengeHtml(a, ding[0], a - b) + '</div>';
-          gleichung = a + " − " + b + " = ?";
+          gleichung = zahlSvg(a, 50) + " − " + zahlSvg(b, 50) + " = ?";
           text = "Es sind " + a + " " + ding[1] + ". " + b + " sind weg. Wie viele bleiben?";
         }
         aufgabe = { richtig: richtig, text: text };
@@ -211,24 +211,25 @@
       } else if (modus === "schreiben") {
         let n; do { n = zahl(0, 9); } while (n === letzteZahl);
         letzteZahl = n;
-        aufgabe = { richtig: n, text: "Fahr die Zahl " + n + " nach." };
+        aufgabe = { richtig: n, text: "Fahr die Zahl " + n + " nach. Beginne beim grünen Punkt." };
         const punkte = n > 0 ? mengeHtml(n, "🔵") : '<div class="aufgabe-text">Null ist gar nichts!</div>';
-        inhalt.innerHTML = '<div class="nachfahr-box"><canvas id="leinwand"></canvas></div>' +
-                           '<div class="nachfahr-knoepfe"><button class="knopf-klein" id="nochmal">🧽 Nochmal</button></div>' +
+        inhalt.innerHTML = '<div class="nachfahr-box" id="nachfahrBox"></div>' +
+                           '<div class="nachfahr-knoepfe"><button class="knopf-klein" id="zeigen">👀 Zeigen</button>' +
+                           '<button class="knopf-klein" id="nochmal">🧽 Nochmal</button></div>' +
                            '<div style="margin-top:12px">' + punkte + '</div>';
-        document.getElementById("nochmal").onclick = function () { if (nachfahren) nachfahren.leeren(); document.getElementById("rueckmeldung").textContent = ""; };
-        schriftBereit().then(function () {
-          nachfahren = Nachfahren(document.getElementById("leinwand"), String(n), function () { geschafft(); },
-            function (text) { document.getElementById("rueckmeldung").textContent = "🙂 Nochmal!"; sprich(text.replace("Buchstaben", "Zahl")); });
-        });
+        nachfahren = Nachfahren(document.getElementById("nachfahrBox"), String(n), function () { geschafft(); },
+          function (text) { document.getElementById("rueckmeldung").textContent = "🙂 Nochmal!"; sprich(text); });
+        document.getElementById("nochmal").onclick = function () { nachfahren.leeren(); document.getElementById("rueckmeldung").textContent = ""; };
+        document.getElementById("zeigen").onclick = function () { nachfahren.zeigen(); };
+        setTimeout(function () { if (nachfahren) nachfahren.zeigen(); }, 400);   // einmal vormachen
       }
       sprich(aufgabe.text);
     }
 
     function knopf(wert) {
       const b = document.createElement("button");
-      b.className = "antwort schrift";
-      b.textContent = wert;
+      b.className = "antwort";
+      b.innerHTML = zahlSvg(wert, 70);
       b.onclick = function () { antworten(b, wert); };
       document.getElementById("antworten").appendChild(b);
     }
@@ -262,16 +263,14 @@
         }
         speichern();
       }
-      const zusatz = { mengen: " Es sind " + aufgabe.richtig + ".", fehlt: " Es fehlt die " + aufgabe.richtig + ".",
-                       rechnen: " Das gibt " + aufgabe.richtig + ".", schreiben: "" }[modus];
-      if (!sticker) sprich(lob + zusatz);
+      // Bei richtigen Antworten spricht die Stimme nicht: Ton und Stern reichen.
+      if (window.speechSynthesis) speechSynthesis.cancel();
       if (aufgestiegen) {
         const b = document.getElementById("neuBanner");
         b.hidden = false;
         b.textContent = "🎉 Neue Stufe bei «" + spiel(modus).name + "»: jetzt bis " + bis(modus) + "!";
-        setTimeout(function () { sprich("Super! Du bist eine Stufe weiter. Jetzt geht es bis " + bis(modus) + "."); }, sticker ? 3400 : 1800);
       }
-      setTimeout(neueAufgabe, sticker ? 3400 : aufgestiegen ? 4200 : 2200);
+      setTimeout(neueAufgabe, sticker ? 3200 : aufgestiegen ? 3000 : 1500);
     }
 
     document.getElementById("vorlesen").onclick = function () { if (aufgabe) sprich(aufgabe.text); };
