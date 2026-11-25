@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Buchstaben">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="icon" type="image/png" href="icon.png">
   <title>Théos Buchstaben</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,8 +19,8 @@
 
     /* Buchstaben-Tafel */
     .tafel-titel { font-size: 22px; margin: 28px 0 10px; }
-    .tafel { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
-    .kachel { border: none; border-radius: 14px; padding: 6px 0 8px; font-size: 26px; color: white; box-shadow: 0 3px 0 rgba(0,0,0,.15); }
+    .tafel { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 640px; margin: 0 auto; }
+    .kachel { width: 66px; border: none; border-radius: 14px; padding: 6px 0 8px; font-size: 26px; color: white; box-shadow: 0 3px 0 rgba(0,0,0,.15); }
     .kachel.kann { background: #2a9d8f; }
     .kachel.offen { background: #f4a261; }
     .kachel.zu { background: #d4d4d4; color: #f4f4f4; }
@@ -35,6 +37,7 @@
 <body>
 
   <div class="kopf">
+    <a class="heim" href="../" aria-label="Zur Auswahl Buchstaben und Zahlen">🏠 Start</a>
     <h1>🔤 Buchstaben</h1>
     <button class="album-knopf" id="albumKnopf" aria-label="Sammelalbum">
       <span class="album-zahl">📒 <span id="albumZahl">0</span></span>

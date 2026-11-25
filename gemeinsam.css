@@ -20,8 +20,14 @@ button { font-family: inherit; cursor: pointer; touch-action: manipulation; colo
 .schrift { font-family: "Andika", "Trebuchet MS", Arial, sans-serif; }
 
 /* Kopfzeile */
-.kopf { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; max-width: 860px; margin: 0 auto; }
-h1 { margin: 0; font-size: 28px; color: #0a7bc2; }
+.kopf { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 14px 16px; max-width: 860px; margin: 0 auto; }
+.kopf .album-knopf { justify-self: end; }
+h1 { margin: 0; font-size: 28px; color: #0a7bc2; text-align: center; }
+/* Knopf zurück zur Auswahl Buchstaben/Zahlen */
+.heim { justify-self: start; display: inline-flex; align-items: center; gap: 6px; background: white; border-radius: 20px;
+        padding: 10px 16px; font-size: 20px; font-weight: bold; color: #0a7bc2; text-decoration: none;
+        box-shadow: 0 3px 0 #d6d6d6; }
+.heim:active { transform: translateY(3px); box-shadow: none; }
 
 /* Begrüssung mit Foto */
 .begruessung { margin: 4px 0 10px; }
@@ -40,7 +46,8 @@ h1 { margin: 0; font-size: 28px; color: #0a7bc2; }
 /* Startseite: grosse Karten */
 .seite { padding: 0 16px 30px; max-width: 860px; margin: 0 auto; }
 .frage { font-size: 24px; margin: 6px 0 16px; }
-.raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+.raster { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
+.raster > .karte { width: 190px; }
 .karte { border: none; border-radius: 26px; padding: 18px 10px 16px; color: white; box-shadow: 0 6px 0 rgba(0,0,0,.18); }
 .karte:active { transform: translateY(5px); box-shadow: 0 1px 0 rgba(0,0,0,.18); }
 .karte .bild { font-size: 56px; display: block; line-height: 1.1; }
